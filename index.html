@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="shortcut icon" href="../img/icons/favicon.png" />
+		<meta charset="windows-1251">
+	<title>Stimpy mouse</title>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/stimpy.js"></script>
+	<style>
+
+*{
+	margin: 0px;
+	padding: 0px;
+	box-sizing: border-box;
+}
+
+body {
+	background-color: #000000;
+	cursor: default;
+	overflow: hidden;
+}
+
+#canvas {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+			transform: translate( -50%, -50% );
+}
+
+#result { display: none; }
+
+	</style>
+	<script>
+
+var color1 = "#ffffff"; 	//"#bd8456";		// земля
+var color2 = "#000000";		// стены
+
+var map = "volume";
+var timer_time = 300;
+/*
+var wall = new Image();
+	wall.src = "../img/wall.png";
+var ground = new Image();
+	ground.src = "../img/ground.png";
+*/
+
+var canvas;
+var ctx;
+var poleX = 91;
+var poleY = 42;
+var step = 15;
+var matrix;
+var mobs;
+var my_timer = 0;
+
+
+$(function() { 
+	$("body").hide();
+})
+
+function start()
+{
+	canvas = document.getElementById('canvas');
+	ctx = canvas.getContext('2d');
+		document.all.canvas.style.width = poleX * step;
+		document.all.canvas.style.height = poleY * step;
+		canvas.width = poleX * step;
+		canvas.height = poleY * step;
+		
+	$("#canvas").css("background-color", color1);
+	
+	create_matrix(  )
+}
+
+function start_after_load()
+{
+	create_mobs(  )
+
+	set_timer()
+	
+	$("body").fadeIn("slow");
+	
+}
+
+function xyz( zx, zy, zindex, zparent )
+{
+	this.x = zx;
+	this.y = zy;
+	this.index = zindex;
+	this.born = zparent;
+}
+
+function refresh()
+{
+	act_mobs(  );
+	drawer(  );
+}
+
+function free( zx, zy )
+{
+	if( matrix[ zx ][ zy ] == 0 )	{ return true; }
+	else	{ return false; }
+}
+
+function act_mobs(  )
+{
+	for( mobs_i=0; mobs_i<mobs.length; mobs_i++ )		{
+		mobs[ mobs_i ].walk();
+										}
+}
+
+function create_mobs(  )
+{
+	mobs = [ new stimpy(), new stimpy(), new stimpy(), new stimpy(), new stimpy() ];
+}
+
+function set_timer()
+{
+	if( my_timer == 0 )		{ refresh(); my_timer = window.setInterval( "refresh()", timer_time ); }
+	else	{
+		window.clearInterval( my_timer );
+		my_timer = 0;
+	}
+}
+
+function create_matrix(  )
+{
+	$('#result').load('../maps/' +map+ '.txt', function() {
+	
+		txt = String( document.all.result.innerText ).split("\n");
+
+		matrix = [  ];
+		for( i=0; i<poleX; i++ )		{
+			matrix[ i ] = [  ];
+				for( j=0; j<poleY; j++ )		{
+					matrix[ i ][ j ] = parseInt( txt[ j ].split(" ")[i] );
+												}
+										}
+		
+		start_after_load(  );
+														});
+}
+
+function drawer(  )
+{
+	//матрица
+	for( i=0; i< poleX; i++ )		{
+		for( j=0; j< poleY + 1; j++ )			{
+		
+			if( Number( matrix[ i ][ j ] ) )		{
+		
+				//1
+				ctx.beginPath();
+				ctx.fillStyle = color2;
+				ctx.fillRect(i*step, j*step, step, step);
+				ctx.closePath();
+				ctx.stroke();
+		
+				//try { ctx.drawImage( wall, i*step, j*step ); } 	catch(err){  }
+
+													}
+		
+			else	{
+		
+				//0
+				ctx.beginPath();
+				ctx.clearRect(i*step, j*step, step, step);
+				ctx.closePath();
+				ctx.stroke();
+		
+				//try { ctx.drawImage( ground, i*step, j*step ); } 	catch(err){  }
+				
+					}
+		
+		
+			
+												}
+									}
+									
+	for( i=0; i< mobs.length; i++ )		{
+		//путь
+		for( zm=0; zm<mobs[i].path.length; zm++ )		{
+			if( mobs[i].path[zm].marker == 1 )		{
+				ctx.beginPath();
+				ctx.fillStyle = "pink";
+				ctx.fillRect(mobs[i].path[zm].x*step, mobs[i].path[zm].y*step, step, step);
+				ctx.closePath();
+				ctx.stroke();	
+													}
+														}
+										}
+									
+	//мобы
+	for( i=0; i< mobs.length; i++ )		{	
+	
+		//цель
+		
+		ctx.beginPath();
+		ctx.fillStyle = "orange";
+		ctx.fillRect(mobs[i].direction.x*step, mobs[i].direction.y*step, step, step);
+		ctx.closePath();
+		ctx.stroke();
+		
+		/*
+			//след
+			for( zi=0; zi< mobs[i].path.length; zi++ )			{	
+			
+				ctx.beginPath();
+				ctx.fillStyle = "pink";
+				ctx.fillRect(mobs[i].path[zi].x*step, mobs[i].path[zi].y*step, step, step);
+				ctx.closePath();
+				ctx.stroke();							
+				
+				
+			
+				//ctx.font = "15px serif black";
+				//ctx.fillText(mobs[i].path[zi].z, mobs[i].path[zi].x*step, mobs[i].path[zi].y*step+step);
+			
+																}
+		*/
+			
+			try { ctx.drawImage( mobs[i].img, mobs[i].x*step - mobs[i].img.width / 3, mobs[i].y*step - mobs[i].img.width / 3 ); } 	catch(err){  }
+			
+		
+		
+		
+		
+		/*
+		//квадрат
+		ctx.beginPath();
+		ctx.fillStyle = "red";
+		ctx.fillRect(mobs[i].x*step, mobs[i].y*step, step, step);
+		ctx.closePath();
+		ctx.stroke();
+		*/
+		
+										}
+		
+}
+
+function keys()
+{
+ switch( event.keyCode )	{
+	case 32:	//space
+		set_timer();
+				break;
+	default:
+							}
+}
+
+	</script>
+</head>
+<body onLoad="start()" oncontextmenu="return false" onkeyup="keys()">
+
+	<div id="result"></div>
+
+	<canvas id="canvas" onselectstart="return false;">no canvas</canvas>
+
+</body>
+</html>
